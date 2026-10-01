@@ -1469,7 +1469,7 @@ void x265_csvlog_frame(const x265_param* param, const x265_picture* pic)
         while (frameStats->list0POC[i] != -1)
             fprintf(param->csvfpt, "%d ", frameStats->list0POC[i++]);
         fprintf(param->csvfpt, ",");
-        if (frameStats->sliceType != 'P')
+        if (frameStats->sliceType != 'P' && frameStats->sliceType != 'p')
         {
             i = 0;
             while (frameStats->list1POC[i] != -1)

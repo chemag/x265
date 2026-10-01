@@ -170,6 +170,7 @@ public:
     /* pre-lookahead */
     int           m_fullQueueSize;
     int           m_lastKeyframe;
+    int m_lastLowDelayKeyframe;
     int           m_8x8Width;
     int           m_8x8Height;
     int           m_8x8Blocks;
@@ -245,6 +246,7 @@ public:
 protected:
 
     void    findJob(int workerThreadID);
+    void setLowDelayHierarchicalP(Frame &frame);
     void    slicetypeDecide();
     void    slicetypeAnalyse(Lowres **frames, bool bKeyframe);
 

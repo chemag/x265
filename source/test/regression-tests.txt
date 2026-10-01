@@ -188,6 +188,8 @@ BasketballDrive_1920x1080_50.y4m, --preset ultrafast --no-open-gop --chunk-start
 #RaceHorses_416x240_30_10bit.yuv,--preset ultrafast --signhide --colormatrix bt709 --film-grain "RaceHorses_416x240_30_10bit.bin"
 
 #Temporal layers tests
+ducks_take_off_420_720p50.y4m,--preset superfast --temporal-layers 2 --bframes 0 --rc-lookahead 0 --no-cutree --no-open-gop
+big_buck_bunny_360p24.y4m,--preset superfast --temporal-layers 2 --bframes 0 --keyint 25 --min-keyint 25 --no-open-gop --cutree
 ducks_take_off_420_720p50.y4m,--preset slow --temporal-layers 3 --b-adapt 0
 parkrun_ter_720p50.y4m,--preset medium --temporal-layers 4 --b-adapt 0
 BasketballDrive_1920x1080_50.y4m, --preset medium --no-open-gop --keyint 50 --min-keyint 50 --temporal-layers 5 --b-adapt 0

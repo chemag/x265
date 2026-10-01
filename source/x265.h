@@ -139,6 +139,8 @@ typedef struct x265_analysis_validate
     int     rightOffset;
     int     bottomOffset;
     int     frameDuplication;
+    // cppcheck-suppress unusedStructMember
+    int temporalLayers;
 }x265_analysis_validate;
 
 /* Stores intra analysis data for a single frame. This struct needs better packing */
@@ -1323,7 +1325,11 @@ typedef struct x265_param
      * slices with their temporalId. Output bitstreams can be extracted either
      * at the base temporal layer (layer 0) with roughly half the frame rate or
      * at a higher temporal layer (layer 1) that decodes all the frames in the
-     * sequence. */
+     * sequence. With two temporal layers and bframes set to 0, alternating P
+     * pictures within each keyframe interval are emitted in layer 1 as
+     * non-reference pictures, providing a low-delay hierarchical-P structure.
+     * cuTree is disabled for this mode because its propagation model assumes
+     * that every P picture is a reference. */
     int       bEnableTemporalSubLayers;
 
     /*== GOP structure and slice type decisions (lookahead) ==*/

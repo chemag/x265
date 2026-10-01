@@ -2211,7 +2211,7 @@ int Encoder::encode(const x265_picture* pic_in, x265_picture* pic_out)
                     outFrame->m_rcData->poc = curEncoder->m_rce.poc;
                     outFrame->m_rcData->encodeOrder = curEncoder->m_rce.encodeOrder;
                     outFrame->m_rcData->sliceType = curEncoder->m_rce.sliceType;
-                    outFrame->m_rcData->keptAsRef = curEncoder->m_rce.sliceType == B_SLICE && !IS_REFERENCED(outFrame) ? 0 : 1;
+                    outFrame->m_rcData->keptAsRef = IS_REFERENCED(outFrame) ? 1 : 0;
                     outFrame->m_rcData->qpAq = outFrame->m_encData->m_avgQpAq;
                     outFrame->m_rcData->iCuCount = outFrame->m_encData->m_frameStats.percent8x8Intra * m_rateControl->m_ncu;
                     outFrame->m_rcData->pCuCount = outFrame->m_encData->m_frameStats.percent8x8Inter * m_rateControl->m_ncu;
@@ -2270,6 +2270,7 @@ int Encoder::encode(const x265_picture* pic_in, x265_picture* pic_out)
                 else if(m_param->numViews > 1)
                     frameEnc[layer]->m_lowres.sliceType = IS_X265_TYPE_I(baseViewType) ? X265_TYPE_P : baseViewType;
                 frameEnc[layer]->m_lowres.bKeyframe = frameEnc[0]->m_lowres.bKeyframe;
+                frameEnc[layer]->m_lowres.bNonReference = frameEnc[0]->m_lowres.bNonReference;
                 frameEnc[layer]->m_tempLayer = frameEnc[0]->m_tempLayer;
             }
 #endif
@@ -4298,6 +4299,13 @@ void Encoder::configure(x265_param *p)
         p->bSelectiveMCSTF = 0;
     }
 
+    if (p->bEnableTemporalSubLayers == 2 && !p->bframes && p->rc.cuTree)
+    {
+        x265_log(p, X265_LOG_WARNING,
+                 "cuTree does not support non-reference P pictures; disabling cuTree for low-delay hierarchical-P\n");
+        p->rc.cuTree = 0;
+    }
+
     if ((p->bEnableTemporalSubLayers > 2) && !p->bframes)
     {
         x265_log(p, X265_LOG_WARNING, "B frames not enabled, temporal sublayer disabled\n");
@@ -5618,6 +5626,8 @@ int Encoder::validateAnalysisData(x265_analysis_validate* saveParam, int writeFl
     X265_PARAM_VALIDATE(saveParam->keyframeMin, sizeof(int), 1, &m_param->keyframeMin, min-keyint);
     X265_PARAM_VALIDATE(saveParam->openGOP, sizeof(int), 1, &m_param->bOpenGOP, open-gop);
     X265_PARAM_VALIDATE(saveParam->bframes, sizeof(int), 1, &m_param->bframes, bframes);
+    X265_PARAM_VALIDATE(saveParam->temporalLayers, sizeof(int), 1, &m_param->bEnableTemporalSubLayers,
+                        temporal - layers);
     X265_PARAM_VALIDATE(saveParam->bPyramid, sizeof(int), 1, &m_param->bBPyramid, bPyramid);
     X265_PARAM_VALIDATE(saveParam->minCUSize, sizeof(int), 1, &m_param->minCUSize, min - cu - size);
     X265_PARAM_VALIDATE(saveParam->lookaheadDepth, sizeof(int), 1, &m_param->lookaheadDepth, rc - lookahead);

@@ -346,7 +346,7 @@ bool enforceLevel(x265_param& param, VPS& vps)
     vps.maxTempSubLayers = !!param.bEnableTemporalSubLayers ? param.bEnableTemporalSubLayers : 1;
     for (uint32_t i = 0; i < vps.maxTempSubLayers; i++)
     {
-        vps.numReorderPics[i] = (i == 0) ? ((param.bBPyramid && param.bframes > 1) ? 2 : !!param.bframes) : i;
+        vps.numReorderPics[i] = !param.bframes ? 0 : (i == 0) ? ((param.bBPyramid && param.bframes > 1) ? 2 : 1) : i;
         vps.maxDecPicBuffering[i] = X265_MIN(MAX_NUM_REF, X265_MAX(vps.numReorderPics[i] + 2, (uint32_t)param.maxNumReferences) + 1) + !!param.bEnableSCC;
     }
 

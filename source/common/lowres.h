@@ -175,6 +175,7 @@ struct Lowres : public ReferencePlanes
 
     bool   bScenecut;        // Set to false if the frame cannot possibly be part of a real scenecut.
     bool   bKeyframe;
+    bool bNonReference; // P picture intentionally excluded from future reference lists
     bool   bLastMiniGopBFrame;
     bool   bIsFadeEnd;
     bool    filterThisGOP;  // Set by lookahead noise gate: true = GOP start was noisy, apply MCSTF

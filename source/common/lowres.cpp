@@ -80,7 +80,9 @@ fail:
 bool Lowres::create(x265_param* param, PicYuv *origPic, uint32_t qgSize)
 {
     isLowres = true;
-    bframes = param->bframes;
+    /* Low-delay hierarchical-P uses a two-POC prediction distance even though
+     * it has no B pictures, so reserve one extra lookahead-cost slot. */
+    bframes = param->bframes ? param->bframes : (param->bEnableTemporalSubLayers == 2 ? 1 : 0);
     widthFullRes = origPic->m_picWidth;
     heightFullRes = origPic->m_picHeight;
     width = origPic->m_picWidth / 2;
@@ -347,6 +349,7 @@ void Lowres::init(PicYuv* origPic, int poc, bool bEnableTemporalFilter)
 {
     bLastMiniGopBFrame = false;
     bKeyframe = false; // Not a keyframe unless identified by lookahead
+    bNonReference = false;
     bIsFadeEnd = false;
     filterThisGOP = false;
     noiseScore = -1;

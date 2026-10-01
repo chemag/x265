@@ -1075,6 +1075,7 @@ Lookahead::Lookahead(x265_param *param, ThreadPool* pool)
     m_cuTreeStrength = (m_param->rc.hevcAq ? 6.0 : 5.0) * (1.0 - m_param->rc.qCompress);
 
     m_lastKeyframe = -m_param->keyframeMax;
+    m_lastLowDelayKeyframe = 0;
     m_sliceTypeBusy = false;
     m_fullQueueSize = X265_MAX(1, m_param->lookaheadDepth);
     m_bAdaptiveQuant = m_param->rc.aqMode ||
@@ -1392,6 +1393,19 @@ void Lookahead::findJob(int /*workerThreadID*/)
     m_inputLock.release();
 }
 
+void Lookahead::setLowDelayHierarchicalP(Frame &frame)
+{
+    if (m_param->bEnableTemporalSubLayers != 2 || m_param->bframes)
+        return;
+
+    if (IS_X265_TYPE_I(frame.m_lowres.sliceType))
+        m_lastLowDelayKeyframe = frame.m_poc;
+
+    frame.m_lowres.bNonReference =
+        frame.m_lowres.sliceType == X265_TYPE_P && ((frame.m_poc - m_lastLowDelayKeyframe) & 1);
+    frame.m_tempLayer = frame.m_lowres.bNonReference ? 1 : 0;
+}
+
 /* Called by API thread */
 Frame* Lookahead::getDecidedPicture()
 {
@@ -1403,6 +1417,7 @@ Frame* Lookahead::getDecidedPicture()
 
         if (out)
         {
+            setLowDelayHierarchicalP(*out);
             m_inputCount--;
             return out;
         }
@@ -1423,7 +1438,10 @@ Frame* Lookahead::getDecidedPicture()
         out = m_outputQueue.popFront();
         m_outputLock.release();
         if (out)
+        {
+            setLowDelayHierarchicalP(*out);
             m_inputCount--;
+        }
         return out;
     }
     else
@@ -1481,6 +1499,16 @@ void Lookahead::getEstimatedPictureCost(Frame *curFrame)
     }
     if (!strlen(curFrame->m_param->analysisLoad) || !curFrame->m_param->bDisableLookahead)
     {
+        if (slice->isInterP() && curFrame->m_param->bEnableTemporalSubLayers == 2 && !curFrame->m_param->bframes &&
+            b > 1 && curFrame->m_lowres.costEst[b - p0][p1 - b] <= 0)
+        {
+            /* Low-delay hierarchical-P base pictures reference the previous base
+             * picture, two POCs back. Zero-latency lookahead only precomputes the
+             * immediate-P cost, so estimate the actual reference distance here. */
+            CostEstimateGroup estGroup(*this, frames);
+            estGroup.singleCost(p0, p1, b);
+        }
+
         X265_CHECK(curFrame->m_lowres.costEst[b - p0][p1 - b] > 0, "Slice cost not estimated\n")
 
         if (curFrame->m_param->rc.cuTree && !curFrame->m_param->rc.bStatRead)

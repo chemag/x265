@@ -37,7 +37,7 @@ class FrameData;
 class PicYuv;
 struct SPS;
 
-#define IS_REFERENCED(frame) (frame->m_lowres.sliceType != X265_TYPE_B)
+#define IS_REFERENCED(frame) ((frame)->m_lowres.sliceType != X265_TYPE_B && !(frame)->m_lowres.bNonReference)
 
 /* Ratecontrol statistics */
 struct RcStats

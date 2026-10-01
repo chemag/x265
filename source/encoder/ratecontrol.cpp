@@ -599,6 +599,7 @@ bool RateControl::init(const SPS& sps)
                     CMP_OPT_FIRST_PASS("bitdepth", m_param->internalBitDepth);
                     CMP_OPT_FIRST_PASS("weightp", m_param->bEnableWeightedPred);
                     CMP_OPT_FIRST_PASS("bframes", m_param->bframes);
+                    CMP_OPT_FIRST_PASS("temporal-layers", m_param->bEnableTemporalSubLayers);
                     CMP_OPT_FIRST_PASS("b-pyramid", m_param->bBPyramid);
                     CMP_OPT_FIRST_PASS("open-gop", m_param->bOpenGOP);
                     CMP_OPT_FIRST_PASS(" keyint", m_param->keyframeMax);
@@ -1976,7 +1977,7 @@ double RateControl::rateEstimateQscale(Frame* curFrame, RateControlEntry *rce)
         m_sliderPos++;
     }
 
-    if((!m_param->bEnableSBRC && m_sliceType == B_SLICE) || (m_param->bEnableSBRC && !IS_REFERENCED(curFrame)))
+    if (m_sliceType == B_SLICE && (!m_param->bEnableSBRC || !IS_REFERENCED(curFrame)))
     {
         /* B-frames don't have independent rate control, but rather get the
          * average QP of the two adjacent P-frames + an offset */
@@ -3302,10 +3303,10 @@ int RateControl::writeRateControlFrameStats(Frame* curFrame, RateControlEntry* r
 {
     FrameData& curEncData = *curFrame->m_encData;    
     int ncu = (m_param->rc.qgSize == 8) ? m_ncu * 4 : m_ncu;
-    char cType = rce->sliceType == I_SLICE ? (curFrame->m_lowres.sliceType == X265_TYPE_IDR ? 'I' : 'i')
-        : rce->sliceType == P_SLICE ? 'P'
-        : IS_REFERENCED(curFrame) ? 'B' : 'b';
-    
+    char cType = rce->sliceType == I_SLICE   ? (curFrame->m_lowres.sliceType == X265_TYPE_IDR ? 'I' : 'i')
+                 : rce->sliceType == P_SLICE ? (IS_REFERENCED(curFrame) ? 'P' : 'p')
+                 : IS_REFERENCED(curFrame)   ? 'B'
+                                             : 'b';
     if (!curEncData.m_param->bMultiPassOptRPS)
     {
         if (fprintf(m_statFileOut,

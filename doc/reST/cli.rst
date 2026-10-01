@@ -2712,7 +2712,16 @@ Bitstream options
 	and only decode and display the base layer slices.Allowed number of temporal sub-layers
 	are 2 to 5.(2 and 5 inclusive)
 
-	When enabled, temporal layers 3 through 5 configure a fixed miniGOP with the number of B-frames as shown below, unless the miniGOP size is modified due to lookahead decisions. Temporal layer 2 is a special case that has all reference frames in the base layer and non-reference frames in the enhancement layer without any constraint on the number of B-frames. By default, this feature is disabled.
+	When enabled, temporal layers 3 through 5 configure a fixed miniGOP with the
+	number of B-frames shown below, unless lookahead decisions modify the miniGOP
+	size. Temporal layer 2 is a special case: with B-frames enabled, reference
+	pictures are placed in the base layer and non-reference B pictures in the
+	enhancement layer. With ``--bframes 0``, pictures alternate within each keyframe
+	interval between reference P pictures in the base layer and non-reference P
+	pictures in the enhancement layer. This low-delay hierarchical-P structure has
+	no picture reordering. cuTree is disabled in this mode because its propagation
+	model assumes that every P picture is a reference. By default, temporal layers
+	are disabled.
 
 	+----------------+--------+
 	| temporal Layer | bframes|

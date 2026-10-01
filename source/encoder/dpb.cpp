@@ -166,12 +166,21 @@ void DPB::prepareEncode(Frame *newFrame)
         slice->m_sliceType = P_SLICE;
 #endif
 
-    if (type == X265_TYPE_B)
+    const bool bLowDelayEnhancementP = type == X265_TYPE_P && newFrame->m_lowres.bNonReference;
+    X265_CHECK(!bLowDelayEnhancementP || newFrame->m_tempLayer == 1,
+               "Non-reference low-delay P picture must be in temporal layer 1\n");
+
+    if (type == X265_TYPE_B || bLowDelayEnhancementP)
     {
         newFrame->m_encData->m_bHasReferences = false;
 
-        newFrame->m_tempLayer = (newFrame->m_param->bEnableTemporalSubLayers && !m_bTemporalSublayer) ? 1 : newFrame->m_tempLayer;
-        // Adjust NAL type for unreferenced B frames (change from _R "referenced"
+        if (!bLowDelayEnhancementP)
+        {
+            newFrame->m_tempLayer =
+                newFrame->m_param->bEnableTemporalSubLayers && !m_bTemporalSublayer ? 1 : newFrame->m_tempLayer;
+        }
+
+        // Adjust NAL type for unreferenced pictures (change from _R "referenced"
         // to _N "non-referenced" NAL unit type)
         switch (slice->m_nalUnitType)
         {
@@ -190,7 +199,7 @@ void DPB::prepareEncode(Frame *newFrame)
     }
     else
     {
-        /* m_bHasReferences starts out as true for non-B pictures, and is set to false
+        /* m_bHasReferences starts out as true for reference pictures, and is set to false
          * once no more pictures reference it */
         newFrame->m_encData->m_bHasReferences = true;
     }
